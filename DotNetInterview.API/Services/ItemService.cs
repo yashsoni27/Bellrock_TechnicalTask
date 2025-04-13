@@ -6,10 +6,12 @@ using Microsoft.EntityFrameworkCore;
 public class ItemService
 {
     private readonly DataContext _context;
+    private readonly Func<DateTime> _timeProvider;
 
-    public ItemService(DataContext context)
+    public ItemService(DataContext context, Func<DateTime> timeProvider = null)
     {
         _context = context;
+        _timeProvider = timeProvider ?? (() => DateTime.UtcNow);
     }
 
     public async Task<List<Item>> GetAllItems()
@@ -32,23 +34,37 @@ public class ItemService
             .Include(i => i.Variations)
             .FirstOrDefaultAsync(i => i.Id == id);
 
-        if(item != null)
+        if (item != null)
         {
             UpdateItemPriceAndStatus(item);
         }
         return item;
     }
 
-    public async Task<Item> CreateItem(string refrence, string name, decimal price)
+    public async Task<Item> CreateItem(string reference, string name, decimal price, string? status, decimal? currentPrice, List<Variation> variations)
     {
         var item = new Item
         {
             Id = Guid.NewGuid(),
-            Reference = refrence,
+            Reference = reference,
             Name = name,
             Price = price,
-            Variations = new List<Variation>(),
+            Status = status,
+            CurrentPrice = currentPrice,
+            Variations = new List<Variation>()
         };
+
+        if (variations != null)
+        {
+            foreach (var variation in variations)
+            {
+                item.Variations.Add(new Variation
+                {
+                    Size = variation.Size,
+                    Quantity = variation.Quantity
+                });
+            }
+        }
 
         _context.Items.Add(item);
         await _context.SaveChangesAsync();
@@ -57,7 +73,7 @@ public class ItemService
         return item;
     }
 
-    public async Task<Item> UpdateItem(Guid id, string name, decimal price)
+    public async Task<Item> UpdateItem(Guid id, string name, decimal price, string status, decimal? currentPrice, List<Variation> variations)
     {
         var item = await _context.Items
             .Include(i => i.Variations)
@@ -70,6 +86,21 @@ public class ItemService
 
         item.Name = name;
         item.Price = price;
+        item.Status = status;
+        item.CurrentPrice = currentPrice;
+
+        item.Variations.Clear();
+        if (variations != null)
+        {
+            foreach (var variation in variations)
+            {
+                item.Variations.Add(new Variation
+                {
+                    Size = variation.Size,
+                    Quantity = variation.Quantity
+                });
+            }
+        }
 
         UpdateItemPriceAndStatus(item);
         await _context.SaveChangesAsync();
@@ -93,25 +124,20 @@ public class ItemService
 
     private void UpdateItemPriceAndStatus(Item item)
     {
-        var discount = CalculateDiscount(item, DateTime.UtcNow);
+        var discount = CalculateDiscount(item, _timeProvider());
         item.CurrentPrice = item.Price * (1 - discount);
 
         var totalQuantity = item.Variations.Sum(v => v.Quantity);
         item.Status = totalQuantity > 0 ? $"In Stock ({totalQuantity})" : "Sold Out";
     }
 
-    //public decimal CalculateDiscountedPrice(Item item)
-    //{
-    //    var discount = CalculateDiscount(item, DateTime.UtcNow);
-    //    return item.Price * (1 - discount);
-    //}
-
-    private decimal CalculateDiscount(Item item, DateTime currentTime)
+    private decimal CalculateDiscount(Item item, DateTime? currentTime = null)
     {
         decimal maxDiscount = 0;
+        var time = currentTime ?? _timeProvider();
 
         // Monday discount (50%)
-        if (currentTime.DayOfWeek == DayOfWeek.Monday && currentTime.Hour >= 12 && currentTime.Hour < 17)
+        if (time.DayOfWeek == DayOfWeek.Monday && time.Hour >= 12 && time.Hour < 17)
         {
             maxDiscount = Math.Max(maxDiscount, 0.5m);
         }
@@ -127,6 +153,7 @@ public class ItemService
         {
             maxDiscount = Math.Max(maxDiscount, 0.1m); // 10% discount
         }
+
 
         return maxDiscount;
     }

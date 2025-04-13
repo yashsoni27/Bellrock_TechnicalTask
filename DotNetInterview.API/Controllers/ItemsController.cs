@@ -38,10 +38,14 @@ namespace DotNetInterview.API.Controllers
         {
             if (item == null)
                 return BadRequest("Invalid item data.");
+            
             var createdItem = await _itemService.CreateItem(
                 item.Reference,
                 item.Name,
-                item.Price
+                item.Price,
+                item.Status,
+                item.CurrentPrice,
+                item.Variations.ToList() ?? new List<Variation>()
             );
 
             return CreatedAtAction(nameof(GetItem), new { id = createdItem.Id }, createdItem);
@@ -53,7 +57,15 @@ namespace DotNetInterview.API.Controllers
             if (item == null)
                 return BadRequest("Invalid item data.");
 
-            var updatedItem = await _itemService.UpdateItem(id, item.Name, item.Price);
+            var updatedItem = await _itemService.UpdateItem(
+                id,
+                item.Name,
+                item.Price,
+                item.Status,
+                item.CurrentPrice,
+                item.Variations.ToList() 
+            );
+
             if (updatedItem == null)
                 return NotFound();
 
