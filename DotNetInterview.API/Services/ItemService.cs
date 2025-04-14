@@ -11,7 +11,7 @@ public class ItemService
     public ItemService(DataContext context, Func<DateTime> timeProvider = null)
     {
         _context = context;
-        _timeProvider = timeProvider ?? (() => DateTime.UtcNow);
+        _timeProvider = timeProvider ?? (() => DateTime.Now);
     }
 
     public async Task<List<Item>> GetAllItems()
@@ -124,11 +124,11 @@ public class ItemService
 
     private void UpdateItemPriceAndStatus(Item item)
     {
-        var discount = CalculateDiscount(item, _timeProvider());
-        item.CurrentPrice = item.Price * (1 - discount);
-
         var totalQuantity = item.Variations.Sum(v => v.Quantity);
         item.Status = totalQuantity > 0 ? $"In Stock ({totalQuantity})" : "Sold Out";
+
+        var discount = CalculateDiscount(item, _timeProvider());
+        item.CurrentPrice = item.Status == "Sold Out" ? null : item.Price * (1 - discount);
     }
 
     private decimal CalculateDiscount(Item item, DateTime? currentTime = null)

@@ -277,7 +277,6 @@ public class ItemServiceTests
         new Variation { Size = "S", Quantity = 15 }
     });
 
-        // Mock Monday at 2 PM (within 12-5 PM window) for 50% discount
         var monday = new DateTime(2025, 4, 14, 14, 0, 0); // Monday
         var itemService = new ItemService(_dataContext, () => monday);
 
