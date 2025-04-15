@@ -1,0 +1,105 @@
+@page
+@model DotNetInterview.Web.Pages.Items.CreateModel
+@{
+    ViewData["Title"] = "Create Item";
+}
+
+<div class="container mt-4">
+    <h1>Create New Item</h1>
+
+    @if (!ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul>
+                @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post">
+        <div class="mb-3">
+            <label for="reference" class="form-label">Reference:</label>
+            <input type="text" class="form-control" id="reference" asp-for="Item.Reference" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name:</label>
+            <input type="text" class="form-control" id="name" asp-for="Item.Name" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="price" class="form-label">Price:</label>
+            <div class="input-group">
+                <span class="input-group-text">£</span>
+                <input type="number" class="form-control" id="price" asp-for="Item.Price" step="0.01" required />
+            </div>
+        </div>
+
+        <h3 class="mt-4">Variations</h3>
+        <div id="variations">
+            @for (var i = 0; i < Model.Variations.Count; i++)
+            {
+                <div class="row mb-2">
+                    <div class="col">
+                        <label class="form-label">Size</label>
+                        <input type="text" class="form-control" asp-for="Variations[i].Size" />
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" asp-for="Variations[i].Quantity" min="0" value="0" />
+                    </div>
+                    <div class="col-auto d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger mb-2" onclick="removeVariation(this)">Remove</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <button type="button" class="btn btn-outline-secondary mt-2" onclick="addVariation()">Add Variation</button>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-outline-dark">Create Item</button>
+            <a href="/Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    let variationCount = @Model.Variations.Count;
+    
+    function addVariation() {
+        const container = document.getElementById('variations');
+        const newRow = document.createElement('div');
+        newRow.className = 'row mb-2';
+        newRow.innerHTML = `
+            <div class="col">
+                <label class="form-label">Size</label>
+                <input type="text" class="form-control" name="Variations[${variationCount}].Size" />
+            </div>
+            <div class="col">
+                <label class="form-label">Quantity</label>
+                <input type="number" class="form-control" name="Variations[${variationCount}].Quantity" min="0" value="0" />
+            </div>
+            <div class="col-auto d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger mb-2" onclick="removeVariation(this)">Remove</button>
+            </div>
+        `;
+        container.appendChild(newRow);
+        variationCount++;
+    }
+
+    function removeVariation(button) {
+        button.closest('.row').remove();
+    }
+</script>
+
+<style>
+    .btn-outline-dark {
+        border: 2px solid #000;
+        font-weight: bold;
+        padding: 8px 16px;
+    }
+</style> 

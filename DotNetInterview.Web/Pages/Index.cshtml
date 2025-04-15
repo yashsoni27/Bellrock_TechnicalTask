@@ -1,0 +1,76 @@
+﻿@page
+@model DotNetInterview.Web.Pages.ItemsModel
+@{
+    ViewData["Title"] = "Stock List";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Stock List</h1>
+    <a href="/Items/Create" class="btn btn-outline-dark">Create New Item (+)</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead class="bg-light">
+            <tr>
+                <th>Ref</th>
+                <th>Item Name</th>
+                <th>Original Price</th>
+                <th>Current Price</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.Reference</td>
+                    <td>@item.Name</td>
+                    <td>£@item.Price.ToString("F2")</td>
+                    <td>
+                        @{
+                            if (!item.CurrentPrice.HasValue || item.CurrentPrice.Value == item.Price)
+                            {
+                                <text>-</text>
+                            }
+                            else
+                            {
+                                var discount = (1 - (item.CurrentPrice.Value / item.Price)) * 100;
+                                <text>£@item.CurrentPrice.Value.ToString("F2") (@discount.ToString("F0")% off)</text>
+                            }
+                        }
+                    </td>
+                    <td>@item.Status</td>
+                    <td>
+                        <a href="/Items/View/@item.Id">View</a> |
+                        <a href="/Items/Edit/@item.Id">Edit</a> |
+                        <a href="/Items/Delete/@item.Id" class="text-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* Add some custom styles *@
+<style>
+    .table {
+        border: 2px solid #000;
+    }
+
+        .table th {
+            background-color: #f8f9fa;
+            border: 1px solid #000;
+        }
+
+        .table td {
+            border: 1px solid #000;
+        }
+
+    .btn-outline-dark {
+        border: 2px solid #000;
+        font-weight: bold;
+        padding: 8px 16px;
+    }
+</style> 
